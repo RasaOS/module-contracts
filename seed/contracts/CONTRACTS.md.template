@@ -1,0 +1,56 @@
+# Contracts — {{PROJECT}}
+
+> This file is yours (project-owned). It is the live contract register —
+> inbound + outbound agreements, one entry per contract. `/contract add`
+> files a row; `/contract update` advances its status; `/renewals` reads the
+> `expiry_date` + `renewal` fields. Don't rewrite history — advance a
+> contract's `status` in place, and mark ended contracts `expired` /
+> `terminated` (never delete). Format reference: `.claude/contracts-rules.md`.
+
+**Account handle:** every contract references its customer by a stable
+`@acct-<slug>` handle (the join key shared across the business-ops modules).
+**Money:** always a `value` + `currency` pair. **Dates:** always absolute
+(`YYYY-MM-DD`). **`CON-NNN`:** monotonic, never reused.
+
+---
+
+<!-- Newest at the bottom. One entry per contract. Example shape: -->
+
+## CON-001 — (example) Acme MSA 2026
+
+- **Account:** `@acct-acme`
+- **Direction:** outbound
+- **Counterparty:** Acme Corp.
+- **Title:** Acme Master Services Agreement 2026
+- **Type:** MSA
+- **Effective:** 2026-01-01
+- **Expiry:** 2026-12-31
+- **Value:** 120000 USD (annual)
+- **Status:** active
+- **Renewal:** auto · notice_days 60   <!-- cancel by 2026-11-01 or it renews -->
+- **Signed:** 2025-12-18
+- **Doc-ref:** `docs/contracts/acme-msa-2026.pdf`   <!-- or a domain.legal Matter id -->
+- **Obligations:**
+  - Quarterly security review shared with Acme
+  - Monthly usage report by the 5th
+- **Notes:** Superseded CON-000 (2025 term).
+
+## CON-002 — (example) Cloud hosting — CloudVend
+
+- **Account:** `@acct-cloudvend`
+- **Direction:** inbound
+- **Counterparty:** CloudVend Inc.
+- **Title:** CloudVend hosting service agreement
+- **Type:** vendor
+- **Effective:** 2026-03-01
+- **Expiry:** 2027-02-28
+- **Value:** 36000 USD (annual)
+- **Status:** active
+- **Renewal:** manual · notice_days 30
+- **Signed:** 2026-02-20
+- **Doc-ref:** `https://dms.example/contracts/cloudvend-2026`
+- **Obligations:**
+  - 99.9% uptime SLA — review monthly
+- **Notes:**
+
+<!-- Delete the two examples above once you file your first real contract. -->

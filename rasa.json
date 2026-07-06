@@ -1,0 +1,87 @@
+{
+  "$schema": "https://rasa-os.github.io/schema/rasa.schema.v1.json",
+  "contract_version": "1.3.0",
+  "name": "rasa.module.contracts",
+  "version": "0.1.0",
+  "kind": "module",
+  "aliases": [
+    "module-contracts"
+  ],
+  "description": "Portable contract register (inbound + outbound): counterparty, dates, value, status, renewals + obligations; attaches to a customer account. A lightweight tracker, not a legal drafting engine.",
+  "source": {
+    "repo": "https://github.com/RasaOS/module-contracts",
+    "branch": "main"
+  },
+  "tier": "Pro",
+  "capabilities": [
+    "contracts.registry",
+    "contracts.lifecycle",
+    "contracts.renewal-tracking",
+    "contracts.account-linkage"
+  ],
+  "permissions": [
+    "fs:read",
+    "fs:write"
+  ],
+  "requires": {
+    "parent_kind": [
+      "domain",
+      "orchestrator"
+    ]
+  },
+  "rasa": {
+    "role": "L1-mountable-capability",
+    "shape_pattern": "toolkit",
+    "note": "The lightweight in/out contract register — one of the six business-ops modules (leads, schedule, contracts, invoices, field-log) that share the @acct-<slug> account handle so records join across modules today by shared key and refactor to the canonical hub FK when canon task SA-032 (engagement-hub primitive) resolves. Ships the portable spine (contracts-rules.md): the Contract record (id/account/direction/counterparty/title/type/dates/value/currency/status/renewal/obligations/signed_date/doc_ref), the draft->negotiation->active->(renewed|expired|terminated) lifecycle, and the renewal-tracking discipline (surface the action window, never auto-renew or send). The three genuinely per-project concerns — the contract TYPE taxonomy, the value-tiered approval thresholds, and the obligation-tracking policy — live in a project-owned .claude/contracts-gate.md (seeded skip-if-exists), the contracts analogue of module.tasks' done-gate. CRITICAL BOUNDARY: this is NOT a legal drafting or clause-review engine; clause-level review, jurisdiction logic, and conflict checks defer (soft ref) to rasa.domain.legal's Matter model, authoritative for legal-heavy contracts — a doc_ref may link a register row to a legal Matter, but the reasoning lives there. Other cross-refs are SOFT: e-signature + notice delivery are Connections (SA-031); a won lead (rasa.module.leads) may create a contract; invoices (rasa.module.invoices) bill against one. HONEST SCOPE: v0.1.0 ships the spine, the specification (content/BUILD_PLAN.md), the seam template, and the ledger template. The /contract, /contracts, and /renewals skills are the authoring build phase, gated per BUILD_PLAN.md M-1..M-3 and deliberately held until a real consumer declares the module in requires.elements[] (the module.tasks / module.notes extract-after-proof precedent)."
+  },
+  "element": {
+    "description": "Element-owned files mirrored into the install target's .claude/ per canon ELEMENT_CONTRACT.md §7. Refreshed on Element upgrade. The contracts-gate seam and the live ledger are NOT here — they are project-owned (see seed.files).",
+    "files": [
+      {
+        "from": "content/contracts-rules.md",
+        "to": ".claude/contracts-rules.md",
+        "policy": "file-replace",
+        "note": "The portable contract-register spine: the Contract record + field set, the draft->negotiation->active->(renewed|expired|terminated) lifecycle, renewal-tracking discipline, the @acct-<slug> account handle, the domain-legal boundary, and the ledger conventions. Element-owned; refreshed on upgrade. References .claude/contracts-gate.md for the per-project type taxonomy / approval thresholds / obligation policy; it hardcodes neither."
+      },
+      {
+        "from": "content/README.md",
+        "to": "content/README.md",
+        "policy": "opt-in",
+        "note": "Describes what this module ships and how it installs. Fork/author-time doc; not installed into consumer projects."
+      },
+      {
+        "from": "content/BUILD_PLAN.md",
+        "to": "content/BUILD_PLAN.md",
+        "policy": "opt-in",
+        "note": "The v0.1.0 specification + build plan (entity model, lifecycle, the contracts-gate seam, the deferred /contract /contracts /renewals skills gated per extract-after-proof, the domain-legal boundary, soft cross-refs). Author-time doc; not installed into consumer projects."
+      }
+    ]
+  },
+  "seed": {
+    "description": "One-time, project-owned files copied at install only (skip-if-exists), per canon ELEMENT_CONTRACT.md §7. These belong to the consuming project after install and are never overwritten on Element upgrade — the project's contracts-gate adapter seam and its live contract ledger.",
+    "files": [
+      {
+        "from": "seed/contracts-gate.md.template",
+        "to": ".claude/contracts-gate.md",
+        "policy": "skip-if-exists",
+        "note": "The per-project adapter seam — the three things that vary per organization: the contract TYPE taxonomy, the value-tiered approval thresholds (who may move a contract to active at what value), and the obligation/renewal-surfacing policy. Project-owned; the project fills it. Ships with honest defaults + commented examples; placeholder-free per the documented skip-if-exists policy gap."
+      },
+      {
+        "from": "seed/contracts/CONTRACTS.md.template",
+        "to": "contracts/CONTRACTS.md",
+        "policy": "skip-if-exists",
+        "note": "The live contract register: one entry per inbound/outbound agreement, CON-NNN monotonic, dates absolute, money as value+currency. Project-owned; append-and-amend (advance status in place, mark ended contracts expired/terminated, never delete). Grows over the project's life."
+      },
+      {
+        "from": "seed/rasa.lock.json.template",
+        "to": ".claude/rasa.lock.json",
+        "policy": "init-only-with-sha",
+        "note": "Stamped with the Element HEAD commit SHA at init time. Lockfile shape per canon Spec §6 (Connection Contract). When co-installed under a parent that also stamps a lockfile, the parent's is authoritative (single-writer-per-path). Substitutes {{ELEMENT_NAME}}, {{ELEMENT_KIND}}, {{ELEMENT_VERSION}}, {{ELEMENT_REPO}}, {{ELEMENT_BRANCH}}, {{ELEMENT_SHA}}, {{TODAY}} via bin/init."
+      }
+    ]
+  },
+  "scaffold": {
+    "description": "Empty directories created at init by the declarative installer. The contracts/ ledger ships as a seed template instead, so this stays empty.",
+    "directories": []
+  }
+}

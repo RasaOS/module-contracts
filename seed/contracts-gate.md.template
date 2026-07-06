@@ -1,0 +1,107 @@
+# Contracts-Gate
+
+**This file is yours.** `rasa.module.contracts` ships the portable contract
+register (`.claude/contracts-rules.md` + the `/contract` skills), but it
+deliberately does not decide the three things that vary per organization:
+
+1. **Your contract TYPE taxonomy** — the real list of contract types you use,
+2. **Your approval thresholds** — who approves a contract at what value, and
+3. **Your obligation-tracking policy** — how obligations and renewal windows
+   get surfaced, to whom, and how far ahead.
+
+This file is where you define all three. The register skills read it: a
+contract cannot be filed with a `type` outside your taxonomy, cannot be moved
+to `active` above an approval threshold without the named approver, and the
+renewal report uses your surfacing policy. Until you fill it, the honest
+defaults below apply — running on the defaults is a smell, not a destination.
+
+Remember the boundary: this is a **register**, not a legal engine. For
+clause-level review, jurisdiction logic, or conflict checks, defer to
+`rasa.domain.legal`'s Matter model (authoritative for legal-heavy contracts).
+Nothing in this gate should try to encode clause logic.
+
+---
+
+## Contract TYPE taxonomy (EDIT THIS)
+
+> Replace the default superset with your real list. A `/contract add` refuses
+> a `type` not in this list.
+
+Default superset (used until you narrow it):
+
+```
+types:
+  - MSA          # master services agreement
+  - SOW          # statement of work (usually under an MSA)
+  - NDA          # non-disclosure
+  - service      # a service agreement
+  - vendor       # a vendor / supplier agreement
+  - employment   # an employment / contractor agreement
+  - other        # escape hatch — if you use this a lot, add a real type
+```
+
+---
+
+## Approval thresholds (EDIT THIS)
+
+> Who may move a contract to `active` at what value. The register records the
+> state; this ladder says who is allowed to sign off. `/contract update`
+> hard-stops on a move to `active` if the value exceeds the tier and the
+> named approver has not signed off.
+
+Minimum-honest default (used until you set real tiers): **a human approves.**
+One person, any value, no ladder. Replace it:
+
+```
+# approval_thresholds:
+#   - up_to:   10000      # value in the contract's currency
+#     approver: "any manager"
+#   - up_to:   100000
+#     approver: "department head"
+#   - up_to:   null       # no ceiling
+#     approver: "legal + an exec signer"
+#
+# value_basis: "annual"   # or "total" — which number `value` holds. State it
+#                         # here so approvals are unambiguous.
+```
+
+---
+
+## Obligation-tracking policy (EDIT THIS)
+
+> How obligations and renewal windows get surfaced. This module *tracks and
+> reminds*; it never enforces, assigns, or sends. Delivery of an actual
+> notice is a Connections (SA-031) concern.
+
+Default: the `/renewals` report surfaces `active` contracts whose action
+window is open (for `auto`, the cancellation deadline `expiry_date −
+notice_days`; for `manual`, the renewal window). No owner, no escalation,
+no cadence. Replace it:
+
+```
+# renewal_surfacing:
+#   horizon_days: 60          # how far ahead /renewals looks by default
+#   owner: "ops@yourco"       # who the report goes to (informational only)
+#
+# obligations:
+#   cadence: "weekly"         # how often obligations get reviewed
+#   escalation: "flag to the contract owner if an obligation is <7 days out"
+#   # If rasa.module.tasks is mounted, an obligation coming due can become a
+#   # TASK-NNN instead of a bare reminder — but that is the project's call,
+#   # not this module's default.
+```
+
+---
+
+## Note on co-mounted modules
+
+- If **`rasa.domain.legal`** is mounted, a contract's `doc_ref` can point at
+  a legal **Matter** for the clause-level work — keep that reasoning in
+  domain-legal, not here.
+- If **`rasa.module.leads`** is mounted, a won lead may create a contract;
+  join on the shared `@acct-<slug>` account handle.
+- If **`rasa.module.invoices`** is mounted, invoices bill against a contract
+  by `CON-NNN` — the invoice references the contract, not the reverse.
+- If **Connections (SA-031)** is available, e-signature envelopes and notice
+  delivery run there; this module records the resulting `signed_date` /
+  `doc_ref`.
